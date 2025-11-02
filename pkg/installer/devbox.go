@@ -55,7 +55,6 @@ func InstallDevbox() error {
 
 	// Execute the script with bash
 	cmd := exec.Command("bash", "-s")
-	cmd.Stdin = io.NopCloser(io.Reader(io.MultiReader(io.LimitReader(os.Stdin, 0))))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
