@@ -2,6 +2,8 @@ package installer
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 )
@@ -33,11 +35,52 @@ func (d *DevboxManager) Install(packages ...string) error {
 // InstallDevbox installs devbox on the system
 func InstallDevbox() error {
 	fmt.Println("Installing devbox...")
-	cmd := exec.Command("bash", "-c", "curl -fsSL https://get.jetify.com/devbox | bash")
+
+	// Download the installation script using Go's HTTP client
+	resp, err := http.Get("https://get.jetify.com/devbox")
+	if err != nil {
+		return fmt.Errorf("failed to download devbox installer: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to download devbox installer: HTTP %d", resp.StatusCode)
+	}
+
+	// Read the script content
+	script, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read installer script: %w", err)
+	}
+
+	// Execute the script with bash
+	cmd := exec.Command("bash", "-s")
+	cmd.Stdin = io.NopCloser(io.Reader(io.MultiReader(io.LimitReader(os.Stdin, 0))))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	return cmd.Run()
+	// Provide the script content as stdin
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return fmt.Errorf("failed to create stdin pipe: %w", err)
+	}
+
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start bash: %w", err)
+	}
+
+	// Write the script to stdin
+	if _, err := stdin.Write(script); err != nil {
+		return fmt.Errorf("failed to write script to bash: %w", err)
+	}
+	stdin.Close()
+
+	// Wait for the command to complete
+	if err := cmd.Wait(); err != nil {
+		return fmt.Errorf("devbox installation failed: %w", err)
+	}
+
+	return nil
 }
 
 // InitDevboxShell initializes devbox shell environment

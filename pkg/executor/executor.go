@@ -109,24 +109,38 @@ func (e *Executor) Execute() error {
 
 func (e *Executor) setupPackageManager() error {
 	if e.config.InstallDevbox {
-		logger.Step("📦", "Installing devbox...")
-		if err := installer.InstallDevbox(); err != nil {
-			logger.Error(fmt.Sprintf("Devbox installation failed: %v", err))
-			logger.Warning("Devbox installation encountered errors.")
+		// Check if devbox is already available
+		if !installer.IsCommandAvailable("devbox") {
+			logger.Step("📦", "Installing devbox...")
+			if err := installer.InstallDevbox(); err != nil {
+				logger.Error(fmt.Sprintf("Devbox installation failed: %v", err))
+				logger.Warning("Devbox installation encountered errors.")
 
-			// Offer fallback
-			if ui.AskYesNo("Would you like to use the system package manager instead?") {
-				logger.Info("Falling back to system package manager...")
-				var detectErr error
-				e.pkgMgr, detectErr = installer.DetectPackageManager()
-				if detectErr != nil {
-					return fmt.Errorf("failed to detect system package manager: %w", detectErr)
+				// Offer fallback
+				if ui.AskYesNo("Would you like to use the system package manager instead?") {
+					logger.Info("Falling back to system package manager...")
+					var detectErr error
+					e.pkgMgr, detectErr = installer.DetectPackageManager()
+					if detectErr != nil {
+						return fmt.Errorf("failed to detect system package manager: %w", detectErr)
+					}
+				} else {
+					return fmt.Errorf("setup cancelled by user")
 				}
 			} else {
-				return fmt.Errorf("setup cancelled by user")
+				logger.Success("Devbox installed successfully!")
+				logger.Println("")
+				logger.Info("⚠️  Devbox requires environment initialization.")
+				logger.Println("")
+				logger.Info("Please run the following commands to activate devbox:")
+				logger.Println("   eval \"$(devbox global shellenv --init-hook)\"")
+				logger.Println("")
+				logger.Info("Then rerun this program to continue the setup.")
+				logger.Println("")
+				return fmt.Errorf("devbox installed - please reload your shell and rerun")
 			}
 		} else {
-			logger.Success("Devbox installed successfully")
+			logger.Info("Devbox is already installed")
 			e.pkgMgr = installer.NewDevboxManager()
 		}
 	} else {
@@ -267,4 +281,3 @@ func (e *Executor) initializeChezmoi() error {
 	logger.Success("Chezmoi initialized successfully")
 	return nil
 }
-
