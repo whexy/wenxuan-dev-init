@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  ubuntu-test:
+    build:
+      context: ..
+      dockerfile: deployment/docker/Dockerfile.ubuntu
+    container_name: wenxuan-dev-init-ubuntu
+    stdin_open: true
+    tty: true
+    volumes:
+      - ../:/workspace
+    working_dir: /workspace
+
+  debian-test:
+    build:
+      context: ..
+      dockerfile: deployment/docker/Dockerfile.debian
+    container_name: wenxuan-dev-init-debian
+    stdin_open: true
+    tty: true
+    volumes:
+      - ../:/workspace
+    working_dir: /workspace
+
+  fedora-test:
+    build:
+      context: ..
+      dockerfile: deployment/docker/Dockerfile.fedora
+    container_name: wenxuan-dev-init-fedora
+    stdin_open: true
+    tty: true
+    volumes:
+      - ../:/workspace
+    working_dir: /workspace
+
+  alpine-test:
+    build:
+      context: ..
+      dockerfile: deployment/docker/Dockerfile.alpine
+    container_name: wenxuan-dev-init-alpine
+    stdin_open: true
+    tty: true
+    volumes:
+      - ../:/workspace
+    working_dir: /workspace

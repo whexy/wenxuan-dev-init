@@ -1,0 +1,26 @@
+# Dockerfile for testing on Fedora (dnf package manager)
+FROM fedora:39
+
+# Install minimal requirements
+RUN dnf install -y \
+    curl \
+    ca-certificates \
+    sudo \
+    && dnf clean all
+
+# Create a non-root user for testing
+RUN useradd -m -s /bin/bash testuser && \
+    echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Copy the binary
+COPY wenxuan-dev-init /usr/local/bin/wenxuan-dev-init
+RUN chmod +x /usr/local/bin/wenxuan-dev-init
+
+# Switch to test user
+USER testuser
+WORKDIR /home/testuser
+
+# Set up shell
+ENV TERM=xterm-256color
+
+CMD ["/bin/bash"]

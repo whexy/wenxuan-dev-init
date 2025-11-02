@@ -1,0 +1,29 @@
+# Dockerfile for testing on Debian (apt package manager)
+FROM debian:12
+
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install minimal requirements
+RUN apt-get update && apt-get install -y \
+    curl \
+    ca-certificates \
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user for testing
+RUN useradd -m -s /bin/bash testuser && \
+    echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Copy the binary
+COPY wenxuan-dev-init /usr/local/bin/wenxuan-dev-init
+RUN chmod +x /usr/local/bin/wenxuan-dev-init
+
+# Switch to test user
+USER testuser
+WORKDIR /home/testuser
+
+# Set up shell
+ENV TERM=xterm-256color
+
+CMD ["/bin/bash"]
