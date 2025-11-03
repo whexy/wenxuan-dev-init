@@ -61,6 +61,15 @@ func (e *Executor) Execute() error {
 		return fmt.Errorf("failed to install packages: %w", err)
 	}
 
+	// Step 2.5: Install Tailscale (requires system package manager for systemd)
+	if e.config.InstallTailscale {
+		if err := e.installTailscale(); err != nil {
+			logger.Error(fmt.Sprintf("Tailscale installation failed: %v", err))
+			logger.Warning("You can install Tailscale manually later.")
+			// Don't fail the entire setup, just continue
+		}
+	}
+
 	// Step 3: Authenticate 1Password
 	if e.config.Login1Password {
 		// Check if 1Password CLI is available
@@ -261,9 +270,9 @@ func (e *Executor) getPackagesToInstall() []string {
 		packages = append(packages, "chezmoi")
 	}
 
-	if e.config.InstallTailscale {
-		packages = append(packages, "tailscale")
-	}
+	// Note: Tailscale is NOT included here because it requires systemd
+	// and must be installed via system package manager, not devbox.
+	// It's installed separately in installTailscale()
 
 	return packages
 }
@@ -304,6 +313,26 @@ func (e *Executor) initializeChezmoi() error {
 	}
 
 	logger.Success("Chezmoi initialized successfully")
+	return nil
+}
+
+func (e *Executor) installTailscale() error {
+	logger.Println("")
+	logger.Step("🔗", "Installing Tailscale (requires system package manager)...")
+
+	// Always use system package manager for Tailscale since it needs systemd
+	systemPkgMgr, err := installer.DetectPackageManager()
+	if err != nil {
+		return fmt.Errorf("failed to detect system package manager: %w", err)
+	}
+
+	logger.Info(fmt.Sprintf("Using system package manager (%s) for Tailscale installation", systemPkgMgr.Name()))
+
+	if err := systemPkgMgr.Install("tailscale"); err != nil {
+		return fmt.Errorf("failed to install tailscale: %w", err)
+	}
+
+	logger.Success("Tailscale installed successfully")
 	return nil
 }
 
