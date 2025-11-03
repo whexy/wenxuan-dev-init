@@ -14,14 +14,16 @@ import (
 
 var (
 	githubTokenRef       = flag.String("github-token", "op://Developer/GitHub Personal Access Token/token", "1Password reference for GitHub token")
+	tailscaleAuthKeyRef  = flag.String("tailscale-authkey", "op://Developer/tailscale auth key/credential", "1Password reference for Tailscale auth key")
 	useServiceAccount    = flag.Bool("use-service-account", false, "Use 1Password service account token (requires OP_SERVICE_ACCOUNT_TOKEN)")
 )
 
 func main() {
 	flag.Parse()
 
-	// Set the global GitHub token reference
+	// Set the global references
 	installer.SetGitHubTokenReference(*githubTokenRef)
+	installer.SetTailscaleAuthKeyReference(*tailscaleAuthKeyRef)
 	installer.SetUseServiceAccount(*useServiceAccount)
 
 	if err := run(); err != nil {

@@ -15,9 +15,11 @@ type Config struct {
 	InstallGH        bool
 	Install1Password bool
 	InstallChezmoi   bool
+	InstallTailscale bool
 	Login1Password   bool
 	SetupGitHub      bool
 	InitChezmoi      bool
+	SetupTailscale   bool
 }
 
 // Executor handles the execution workflow
@@ -35,9 +37,11 @@ func New(options map[string]bool) *Executor {
 			InstallGH:        options["install_gh"],
 			Install1Password: options["install_1password"],
 			InstallChezmoi:   options["install_chezmoi"],
+			InstallTailscale: options["install_tailscale"],
 			Login1Password:   options["login_1password"],
 			SetupGitHub:      options["setup_github"],
 			InitChezmoi:      options["init_chezmoi"],
+			SetupTailscale:   options["setup_tailscale"],
 		},
 	}
 }
@@ -98,6 +102,23 @@ func (e *Executor) Execute() error {
 			if err := e.initializeChezmoi(); err != nil {
 				logger.Error(fmt.Sprintf("Chezmoi initialization failed: %v", err))
 				logger.Warning("You can initialize manually with 'chezmoi init --apply whexy'.")
+			}
+		}
+	}
+
+	// Step 6: Setup Tailscale
+	if e.config.SetupTailscale {
+		// Check if tailscale is available
+		if !installer.IsCommandAvailable("tailscale") {
+			logger.Warning("Tailscale not found, skipping setup.")
+			logger.Println("Install Tailscale manually if needed.")
+		} else if !installer.IsCommandAvailable("op") {
+			logger.Warning("1Password CLI not found, skipping Tailscale setup.")
+			logger.Println("You'll need to setup Tailscale manually with 'tailscale up'.")
+		} else {
+			if err := e.setupTailscale(); err != nil {
+				logger.Error(fmt.Sprintf("Tailscale setup failed: %v", err))
+				logger.Warning("You can setup manually with 'tailscale up --authkey YOUR_KEY'.")
 			}
 		}
 	}
@@ -240,6 +261,10 @@ func (e *Executor) getPackagesToInstall() []string {
 		packages = append(packages, "chezmoi")
 	}
 
+	if e.config.InstallTailscale {
+		packages = append(packages, "tailscale")
+	}
+
 	return packages
 }
 
@@ -279,5 +304,17 @@ func (e *Executor) initializeChezmoi() error {
 	}
 
 	logger.Success("Chezmoi initialized successfully")
+	return nil
+}
+
+func (e *Executor) setupTailscale() error {
+	logger.Println("")
+	logger.Step("🔗", "Setting up Tailscale...")
+
+	if err := installer.SetupTailscale(); err != nil {
+		return err
+	}
+
+	logger.Success("Tailscale setup successful")
 	return nil
 }

@@ -77,6 +77,7 @@ func NewModel() Model {
 		{Name: "1Password CLI", Command: "op", Available: installer.IsCommandAvailable("op"), Icon: "🔐"},
 		{Name: "Chezmoi", Command: "chezmoi", Available: installer.IsCommandAvailable("chezmoi"), Icon: "🏠"},
 		{Name: "Devbox", Command: "devbox", Available: installer.IsCommandAvailable("devbox"), Icon: "📦"},
+		{Name: "Tailscale", Command: "tailscale", Available: installer.IsCommandAvailable("tailscale"), Icon: "🔗"},
 	}
 
 	// Detect package manager
@@ -136,6 +137,12 @@ func NewModel() Model {
 			Key:         "install_chezmoi",
 		},
 		{
+			Label:       "Install Tailscale",
+			Description: "Install Tailscale VPN client",
+			Enabled:     !installer.IsCommandAvailable("tailscale"),
+			Key:         "install_tailscale",
+		},
+		{
 			Label:       "Login to 1Password",
 			Description: "Authenticate with 1Password",
 			Enabled:     true,
@@ -152,6 +159,12 @@ func NewModel() Model {
 			Description: "Run chezmoi init --apply whexy",
 			Enabled:     true,
 			Key:         "init_chezmoi",
+		},
+		{
+			Label:       "Setup Tailscale",
+			Description: "Configure and connect to Tailscale network",
+			Enabled:     installer.IsCommandAvailable("tailscale") && !installer.IsTailscaleSetup(),
+			Key:         "setup_tailscale",
 		},
 	}
 
